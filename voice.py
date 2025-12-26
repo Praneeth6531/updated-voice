@@ -45,12 +45,16 @@ VOICEMAIL_KEYWORDS = [
     "not available", "unavailable", "please leave"
 ]
 
-openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-sw_client = Client(
-    SIGNALWIRE_PROJECT_ID,
-    SIGNALWIRE_TOKEN,
-    signalwire_space_url=SIGNALWIRE_SPACE_URL
-)
+def get_openai_client():
+    return AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+def get_signalwire_client():
+    return Client(
+        os.environ["SIGNALWIRE_PROJECT_ID"],
+        os.environ["SIGNALWIRE_TOKEN"],
+        signalwire_space_url=os.environ["SIGNALWIRE_SPACE_URL"]
+    )
+
 
 app = FastAPI(title="VoiceBot API", version="1.0.0")
 call_semaphore = asyncio.Semaphore(MAX_CONCURRENT_CALLS)
@@ -111,7 +115,7 @@ async def call_all():
         phone = normalize_phone(lead.get("phone", ""))
         name = lead.get("name", "there")
 
-        sw_client.calls.create(
+        get_signalwire_client().calls.create(
             to=phone,
             from_=SIGNALWIRE_FROM_NUMBER,
             url=f"https://{PUBLIC_HOST}/voice?name={quote(name)}&phone={quote(phone)}"
